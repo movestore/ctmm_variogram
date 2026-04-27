@@ -16,7 +16,7 @@ shinyModuleUserInterface <- function(id, label) {
                column(5, sliderInput(
                  ns("columns"),
                  "Columns:",
-                 min = 1, max = 10, value = 3.
+                 min = 1, max = 10, value = 8
                )), 
                column(2, 
                       checkboxInput(
