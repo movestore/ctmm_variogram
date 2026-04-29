@@ -18,13 +18,18 @@ shinyModuleUserInterface <- function(id, label) {
                  "Columns:",
                  min = 1, max = 10, value = 8
                )), 
-               column(2, 
+               column(2,
                       checkboxInput(
-                         ns("plot_axes"), 
-                         "Same axes for all individuals", value = FALSE
+                         ns("plot_axes"),
+                         "Use full data extent for axes", value = FALSE
                        ),
+                      radioButtons(
+                        ns("view_mode"),
+                        "View:",
+                        choices = c("Per individual", "Population variogram"),
+                        selected = "Per individual"
+                      ),
                       uiOutput(ns("selectvar"))
-               
                ))
     ),
     plotOutput(ns("plot"))
@@ -35,65 +40,57 @@ shinyModule <- function(input, output, session, data){ ## The parameter "data" i
   ns <- session$ns 
   
   output$selectvar <- renderUI({
-    selectInput(ns("select_input"), "Select animal(s):",
-                c("All", "Population Variogram", names(data)))
+    checkboxGroupInput(
+      ns("selected_ids"),
+      "Animals:",
+      choices = names(data),
+      selected = names(data)
+    )
   })
-  
-  filter_id <- reactive({
-    input$select_input
-  })
-  observeEvent(input$select_input, {
-    svf <- lapply(data, variogram)
-    
-    svf1 <- if (filter_id() == "All") {
-      svf
-    } else if (filter_id() == "Population Variogram") {
+
+  svf1 <- reactive({
+    req(input$selected_ids)
+    svf <- lapply(data[input$selected_ids], variogram)
+    if (input$view_mode == "Population variogram") {
       mean(svf)
     } else {
-      svf[grep(filter_id(), names(svf))]
+      svf
     }
-    
-    row_count <- reactive({
-      ceiling(length(svf1) / input$columns)
-    })
-    
-    
-    # Individual plots
-    output$plot <- renderPlot({
-      req(svf1)
-      
-      if(filter_id() == "All") {
-      max.lag <- max(sapply(svf1, function(v){ last(v$lag) } ))
-      xlim <- max.lag * input$fraction
-      svf <- lapply(svf1,
-                    function(svf) svf[svf$lag <= xlim, ])
-      
+  })
+
+  row_count <- reactive({
+    ceiling(length(svf1()) / input$columns)
+  })
+
+  output$plot <- renderPlot({
+    svf_sel <- req(svf1())
+
+    if (input$view_mode == "Population variogram") {
+      plot(svf_sel, fraction = input$fraction)
+    } else {
       graphics::par(mfrow = c(row_count(), input$columns),
                     mar = c(5, 5, 4, 1), ps = 18, cex = 1, cex.main = 0.9)
-      
+
       if (input$plot_axes) {
-        extent_tele <- ctmm::extent(svf1)
-        for (i in seq_along(svf1)) {
-          plot(svf1[[i]], 
+        extent_tele <- ctmm::extent(svf_sel)
+        for (i in seq_along(svf_sel)) {
+          plot(svf_sel[[i]],
                fraction = input$fraction,
                xlim = c(0, extent_tele["max", "x"]),
                ylim = c(0, extent_tele["max", "y"]),
-               bty="n")
-          graphics::title(names(svf1[i]))
+               bty = "n")
+          graphics::title(names(svf_sel[i]))
         }
-      }  else {
-        for (i in seq_along(svf1)) {
-          plot(svf1[[i]], 
+      } else {
+        for (i in seq_along(svf_sel)) {
+          plot(svf_sel[[i]],
                fraction = input$fraction,
-               bty="n")
-          graphics::title(names(svf1[i]))
+               bty = "n")
+          graphics::title(names(svf_sel[i]))
         }
       }
-    } else {
-      plot(svf1, fraction = input$fraction)
     }
   })
-})
 
   
 
