@@ -34,17 +34,50 @@ plot_layout <- function(n_panels, max_cols, width) {
   list(cols = cols, rows = rows, height = rows * panel_height)
 }
 
+# Use zoom based on ctmm's `zoom()`. Usually this only works inside RStudio,
+# so we reimplement for this app. Slider shows time lags up to 4^(z - 1) times
+# the longest time lag in the data
+zoom_base <- 4
+zoom_default <- 1 + log(0.5, zoom_base) # shows half the longest time lag
+
+zoom_range <- function(data) {
+  max_lag <- max(sapply(data, function(x) diff(range(x$t))))
+  min_lag <- min(sapply(data, function(x) stats::median(diff(x$t))))
+  min_fraction <- min(0.5, 10 * min_lag / max_lag)
+  list(min = 1 + log(min_fraction, zoom_base), max_lag = max_lag)
+}
+
+zoom_cutoff <- function(z, max_lag) {
+  zoom_base^(z - 1) * max_lag
+}
+
+# Turns a time lag in seconds into readable text, e.g. "3.5 days".
+format_lag <- function(seconds) {
+  units <- c(seconds = 1, minutes = 60, hours = 3600, days = 86400,
+             months = 365.25 * 86400 / 12, years = 365.25 * 86400)
+  unit <- names(units)[max(1, which(units <= seconds))]
+  value <- signif(seconds / units[[unit]], 2)
+  if (value == 1) unit <- sub("s$", "", unit)
+  paste(value, unit)
+}
+
 shinyModuleUserInterface <- function(id, label) {
   ns <- NS(id) ## all IDs of UI functions need to be wrapped in ns()
   tagList(
     titlePanel("Variogram"),
+    # The zoom slider's own numbers mean nothing to users, so they are
+    # hidden and the time-lag cutoff is shown as text underneath instead
+    tags$style(".zoom-slider .irs-min, .zoom-slider .irs-max,
+                .zoom-slider .irs-single { display: none; }"),
     wellPanel(
                fluidRow(
-                 column(5, sliderInput(
-                 ns("fraction"),
-                 "Fraction:",
-                 min = 0, max = 1, value = .5
-               )),
+                 column(5,
+                        uiOutput(ns("zoom_ui")),
+                        div(style = "display: flex; align-items: center; gap: 10px;",
+                            textOutput(ns("zoom_label")),
+                            actionButton(ns("zoom_reset"), "Reset to default",
+                                         class = "btn-sm"))
+               ),
                column(5, sliderInput(
                  ns("columns"),
                  "Max columns:",
@@ -80,6 +113,32 @@ shinyModule <- function(input, output, session, data){ ## The parameter "data" i
     )
   })
 
+  zoom <- zoom_range(data)
+
+  output$zoom_ui <- renderUI({
+    div(class = "zoom-slider", sliderInput(
+      ns("zoom"),
+      "Zoom:",
+      min = zoom$min, max = 1, value = zoom_default,
+      step = 0.01, ticks = FALSE
+    ))
+  })
+
+  # The reset button is left out of saved settings. Otherwise restoring them
+  # would count as a click and undo the restored zoom.
+  setBookmarkExclude("zoom_reset")
+  observeEvent(input$zoom_reset, {
+    updateSliderInput(session, "zoom", value = zoom_default)
+  }, ignoreInit = TRUE)
+
+  cutoff <- reactive({
+    zoom_cutoff(req(input$zoom), zoom$max_lag)
+  })
+
+  output$zoom_label <- renderText({
+    paste("Time lags shown: up to", format_lag(cutoff()))
+  })
+
   svf1 <- reactive({
     req(input$selected_ids)
     svf <- lapply(data[input$selected_ids], variogram)
@@ -104,27 +163,35 @@ shinyModule <- function(input, output, session, data){ ## The parameter "data" i
 
   output$plot <- renderPlot({
     svf_sel <- req(svf1())
+    max_lag <- req(cutoff())
+
+    # Share of a variogram's own lag range that falls within the zoom cutoff
+    zoom_fraction <- function(svf) {
+      min(1, max_lag / utils::tail(svf$lag, 1))
+    }
 
     if (input$view_mode == "Population variogram") {
-      plot(svf_sel, fraction = input$fraction)
+      plot(svf_sel, fraction = zoom_fraction(svf_sel))
     } else {
       graphics::par(mfrow = c(layout()$rows, layout()$cols),
                     mar = c(5, 5, 4, 1), ps = 18, cex = 1, cex.main = 0.9)
 
       if (input$plot_axes) {
-        extent_tele <- ctmm::extent(svf_sel)
-        for (i in seq_along(svf_sel)) {
-          plot(svf_sel[[i]],
-               fraction = input$fraction,
+        # Shared axes cover the zoomed part of every selected variogram
+        zoomed <- lapply(svf_sel, function(svf) svf[svf$lag <= max_lag, ])
+        extent_tele <- ctmm::extent(zoomed)
+        for (i in seq_along(zoomed)) {
+          plot(zoomed[[i]],
+               fraction = 1,
                xlim = c(0, extent_tele["max", "x"]),
                ylim = c(0, extent_tele["max", "y"]),
                bty = "n")
-          graphics::title(names(svf_sel[i]))
+          graphics::title(names(zoomed[i]))
         }
       } else {
         for (i in seq_along(svf_sel)) {
           plot(svf_sel[[i]],
-               fraction = input$fraction,
+               fraction = zoom_fraction(svf_sel[[i]]),
                bty = "n")
           graphics::title(names(svf_sel[i]))
         }
