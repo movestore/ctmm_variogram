@@ -175,6 +175,12 @@ shinyModule <- function(input, output, session, data){ ## The parameter "data" i
     } else {
       graphics::par(mfrow = c(layout()$rows, layout()$cols),
                     mar = c(5, 5, 4, 1), ps = 18, cex = 1, cex.main = 0.9)
+      # ctmm picks long or short axis labels from the size of the panel drawn
+      # last, so on the first panel it would measure the whole page instead.
+      # Starting an empty first panel and stepping back to it makes every
+      # panel choose its labels from the same panel size.
+      graphics::plot.new()
+      graphics::par(mfg = c(1, 1))
 
       if (input$plot_axes) {
         # Shared axes cover the zoomed part of every selected variogram
