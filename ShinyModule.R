@@ -135,18 +135,31 @@ shinyModule <- function(input, output, session, data){ ## The parameter "data" i
     updateSliderInput(session, "zoom", value = zoom_default)
   }, ignoreInit = TRUE)
 
-  cutoff <- reactive({
-    zoom_cutoff(req(input$zoom), zoom$max_lag)
+  output$zoom_label <- renderText({
+    paste("Time lags shown: up to",
+          format_lag(zoom_cutoff(req(input$zoom), zoom$max_lag)))
   })
 
-  output$zoom_label <- renderText({
-    paste("Time lags shown: up to", format_lag(cutoff()))
-  })
+  # Debounce the settings needed for plot rendering. This prevents laggy
+  # plot redraws when settings are changed in succession. Also prevents
+  # two loads on session start if bookmarks are being restored.
+  settings <- debounce(
+    reactive(
+      list(
+        selected_ids = input$selected_ids,
+        view_mode = input$view_mode,
+        zoom = input$zoom,
+        plot_axes = input$plot_axes,
+        columns = input$columns
+      )
+    ),
+    millis = 250
+  )
 
   svf1 <- reactive({
-    req(input$selected_ids)
-    svf <- lapply(data[input$selected_ids], variogram)
-    if (input$view_mode == "Population variogram") {
+    selected_ids <- req(settings()$selected_ids)
+    svf <- lapply(data[selected_ids], variogram)
+    if (settings()$view_mode == "Population variogram") {
       mean(svf)
     } else {
       svf
@@ -154,27 +167,27 @@ shinyModule <- function(input, output, session, data){ ## The parameter "data" i
   })
 
   layout <- reactive({
-    if (input$view_mode == "Population variogram") {
+    if (settings()$view_mode == "Population variogram") {
       n_panels <- 1
     } else {
-      n_panels <- length(input$selected_ids)
+      n_panels <- length(settings()$selected_ids)
     }
-    
+
     width <- session$clientData[[paste0("output_", ns("plot"), "_width")]]
-    
-    plot_layout(n_panels, input$columns, width)
+
+    plot_layout(n_panels, settings()$columns, width)
   })
 
   output$plot <- renderPlot({
     svf_sel <- req(svf1())
-    max_lag <- req(cutoff())
+    max_lag <- zoom_cutoff(req(settings()$zoom), zoom$max_lag)
 
     # Share of a variogram's own lag range that falls within the zoom cutoff
     zoom_fraction <- function(svf) {
       min(1, max_lag / utils::tail(svf$lag, 1))
     }
 
-    if (input$view_mode == "Population variogram") {
+    if (settings()$view_mode == "Population variogram") {
       plot(svf_sel, fraction = zoom_fraction(svf_sel))
     } else {
       graphics::par(mfrow = c(layout()$rows, layout()$cols),
@@ -186,7 +199,7 @@ shinyModule <- function(input, output, session, data){ ## The parameter "data" i
       graphics::plot.new()
       graphics::par(mfg = c(1, 1))
 
-      if (input$plot_axes) {
+      if (isTRUE(settings()$plot_axes)) {
         # Shared axes cover the zoomed part of every selected variogram
         zoomed <- lapply(svf_sel, function(svf) svf[svf$lag <= max_lag, ])
         extent_tele <- ctmm::extent(zoomed)
