@@ -1,6 +1,5 @@
 library(shiny)
 library(ctmm)
-library(dplyr)
 
 # Determine plot grid parameters for the given plot width and number of panels.
 # Caps the grid at `max_cols` columns if there are more plots than `max_cols`.
