@@ -69,6 +69,10 @@ shinyModuleUserInterface <- function(id, label) {
     # hidden and the time-lag cutoff is shown as text underneath instead
     tags$style(".zoom-slider .irs-min, .zoom-slider .irs-max,
                 .zoom-slider .irs-single { display: none; }"),
+    # Always keep room for the page's scrollbar. Otherwise a scrollbar that
+    # appears when the plot overflows the page forces the margins inward,
+    # triggering a trivial redraw.
+    tags$style("html { scrollbar-gutter: stable; }"),
     wellPanel(
                fluidRow(
                  column(5,
