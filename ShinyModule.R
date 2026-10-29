@@ -97,7 +97,7 @@ shinyModuleUserInterface <- function(id, label) {
                       uiOutput(ns("selectvar"))
                ))
     ),
-    plotOutput(ns("plot"))
+    plotOutput(ns("plot"), height = "auto")
   )
 }
 
