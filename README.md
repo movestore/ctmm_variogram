@@ -2,7 +2,7 @@
 
 MoveApps
 
-GitHub repository: https://github.com/ctmm-initiative/ctmmMoveApp_variogram
+GitHub repository: https://github.com/movestore/ctmm_variogram
 
 ## Description
 Calculates and plots variograms of movement tracks to visualize
