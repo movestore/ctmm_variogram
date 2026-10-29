@@ -1,6 +1,14 @@
 library(shiny)
 library(ctmm)
 
+# Cache variogram computations for the lifetime of the R process.
+# Switching views and bookmark restoration use the cached variograms when the
+# input data are identical. Note that time is still required to render
+# the plots when many data points are involved.
+svf_cache <- cachem::cache_mem(max_size = 256 * 1024^2)
+variogram_cached <- memoise::memoise(ctmm::variogram, cache = svf_cache)
+mean_variogram_cached <- memoise::memoise(function(svf) mean(svf), cache = svf_cache)
+
 # Determine plot grid parameters for the given plot width and number of panels.
 # Caps the grid at `max_cols` columns if there are more plots than `max_cols`.
 # Ensures that plots do not have height collapsed as fewer columns/more rows
@@ -157,9 +165,9 @@ shinyModule <- function(input, output, session, data){ ## The parameter "data" i
 
   svf1 <- reactive({
     selected_ids <- req(settings()$selected_ids)
-    svf <- lapply(data[selected_ids], variogram)
+    svf <- lapply(data[selected_ids], variogram_cached)
     if (settings()$view_mode == "Population variogram") {
-      mean(svf)
+      mean_variogram_cached(svf)
     } else {
       svf
     }
