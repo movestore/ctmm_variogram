@@ -86,7 +86,7 @@ shinyModuleUserInterface <- function(id, label) {
                column(2,
                       checkboxInput(
                          ns("plot_axes"),
-                         "Use full data extent for axes", value = FALSE
+                         "Same axes for all animals", value = FALSE
                        ),
                       radioButtons(
                         ns("view_mode"),
