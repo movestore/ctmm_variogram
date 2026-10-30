@@ -4,6 +4,10 @@ MoveApps
 
 GitHub repository: https://github.com/movestore/ctmm_variogram
 
+<p align="center">
+  <img alt="Screenshot of the Apps UI" src="readme_thumbnail.png" width="700">
+</p>
+
 ## Description
 Calculates and plots variograms of movement tracks to visualize
 autocorrelation structure before fitting a continuous-time movement model
