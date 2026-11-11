@@ -8,6 +8,9 @@
       },
       {
         "name": "ctmm"
+      },
+      {
+        "name": "shinycssloaders"
       }
     ]
   },

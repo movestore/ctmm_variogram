@@ -1,5 +1,6 @@
 library(shiny)
 library(ctmm)
+library(shinycssloaders)
 
 # Determine plot grid parameters for the given plot width and number of panels.
 # Caps the grid at `max_cols` columns if there are more plots than `max_cols`.
@@ -100,7 +101,11 @@ shinyModuleUserInterface <- function(id, label) {
                       uiOutput(ns("selectvar"))
                ))
     ),
-    plotOutput(ns("plot"), height = "auto")
+    # Show a spinner while the plot is calculated or redrawn.
+    # min-height gives the spinner room before the first plot is drawn.
+    # (Otherwise it sits on top of the controls above.)
+    tags$style(paste0("#", ns("plot"), " { min-height: 300px; }")),
+    withSpinner(plotOutput(ns("plot"), height = "auto"), hide.ui = FALSE)
   )
 }
 
