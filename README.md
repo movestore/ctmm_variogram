@@ -99,10 +99,10 @@ Drawing the plots also takes longer the more time lags are shown, so the plots
 redraw faster when zoomed in on shorter time lags.
 
 ### Technical details
-Variograms are calculated with `ctmm::variogram()` separately for each animal.
-The function's default settings are used. This means that time lags are binned
-by each animal's median sampling interval and that location error is
-not accounted for.
+Variograms are calculated with [`ctmm::variogram()`][2] separately for each
+animal. The function's default settings are used. This means that time lags
+are binned by each animal's median sampling interval and that location error
+is not accounted for.
 
 Plots are drawn with ctmm's `plot()` method for variograms.
 
@@ -112,6 +112,13 @@ calculated with ctmm's `mean()` method for variograms.
 
 The variogram method is described in Fleming, C. H., Calabrese, J. M.,
 Mueller, T., Olson, K. A., Leimgruber, P., & Fagan, W. F. (2014). From
-fine-scale foraging to home ranges: a semivariance approach to identifying
+fine-scale foraging to home ranges: A semivariance approach to identifying
 movement modes across spatiotemporal scales. *The American Naturalist*,
-183(5), E154–E167.
+183(5), E154–E167. https://doi.org/10.1086/675504
+
+The `ctmm` package is described in Calabrese, J. M., Fleming, C. H., &
+Gurarie, E. (2016). ctmm: An R package for analyzing animal relocation data as
+a continuous-time stochastic process. *Methods in Ecology and Evolution*,
+7(9), 1124–1132. https://doi.org/10.1111/2041-210X.12559
+
+[2]: https://ctmm-initiative.github.io/ctmm/reference/variogram.html
