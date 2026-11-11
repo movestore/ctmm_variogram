@@ -5,7 +5,7 @@ MoveApps
 GitHub repository: https://github.com/movestore/ctmm_variogram
 
 <p align="center">
-  <img alt="Screenshot of the Apps UI" src="readme_thumbnail.png" width="700">
+  <img alt="Screenshot of the App's UI" src="readme_thumbnail.png" width="700">
 </p>
 
 ## Description
@@ -30,7 +30,7 @@ animal and displays them in a grid. It can also be toggled to show a single
 population variogram, which averages the variograms of all the selected animals.
 
 The **Zoom** slider allows you to zoom in or out to view the autocorrelation
-structure at shorter or longer time lags. By default, the first half of the 
+structure at shorter or longer time lags. By default, the first half of the
 variogram is shown; data beyond these lags are often noisy and of limited utility.
 
 See the [ctmm vignette on variograms][1] for more information on interpreting
