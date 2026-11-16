@@ -82,8 +82,13 @@ is too narrow for the panels to stay readable. Fewer columns give larger
 panels. Defaults to 3 columns.
 
 **Animals**: The animals to include in the variogram plot grid. By default,
-all animals are shown. Note that all animals' data are passed to the next
-App, regardless of whether they are selected for visualization or not.
+all animals are shown.
+
+**Remove unselected animals from output**: If this option is selected, only the
+animals that are checked will be included in the data passed to the next app.
+You can use this option to drop animals that do not show range-resident
+behavior. By default, all animals are included in the output, even if their
+variogram is not displayed.
 
 **Store settings**: Click to store the current settings of the App for future
 Workflow runs.
@@ -91,10 +96,13 @@ Workflow runs.
 **Restore default settings**: Click to restore the App's default settings.
 
 ### Changes in output data
-The input data remain unchanged.
+By default, the input data remain unchanged. If **Remove unselected animals
+from output** is selected, only the selected animals are passed on.
 
 ### Errors and null handling
-**Animals selection:** If no animals are selected, no plot is shown.
+**Animals selection:** If no animals are selected, no plot is shown. If
+**Remove unselected animals from output** is also selected, the App returns
+NULL.
 
 **Performance:** The variograms are calculated each time the App's window is
 opened and each time the selected animals or the **View** setting change. For

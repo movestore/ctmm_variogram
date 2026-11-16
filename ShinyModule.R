@@ -130,7 +130,13 @@ shinyModuleUserInterface <- function(id, label) {
           min = 1, max = 6, value = 3, width = "100%"
         ),
         hr(),
-        uiOutput(ns("selectvar"))
+        uiOutput(ns("selectvar")),
+        checkboxInput(
+          ns("remove_unselected"),
+          "Remove unselected animals from output",
+          value = FALSE
+        ),
+        uiOutput(ns("removed_note"))
       )),
       mainPanel(
         width = 9,
@@ -256,10 +262,45 @@ shinyModule <- function(input, output, session, data){ ## The parameter "data" i
     }
   }, height = function() layout()$height)
 
-  
+  # Record the animals that should be removed from the output data
+  removed_ids <- reactive({
+    if (!isTRUE(input$remove_unselected) || !"selected_ids" %in% names(input)) {
+      return(character(0))
+    }
+    setdiff(names(data), input$selected_ids)
+  })
 
+  output$removed_note <- renderUI({
+    ids <- removed_ids()
+    if (length(ids) == 0) return(NULL)
+    p(
+      class = "text-warning",
+      paste0(
+        "These animals will not be passed to the next App: ",
+        paste(ids, collapse = ", "), "."
+      )
+    )
+  })
   
-  return(reactive({ 
-    data
-  })) ## if data are not modified, the unmodified input data must be returned
+  filtered_data <- reactive({
+    ids <- removed_ids()
+    
+    if (length(ids) == 0) {
+      return(data)
+    }
+    
+    logger.warn("Removed unselected animals from the output: %s",
+                paste(ids, collapse = ", "))
+    
+    kept <- data[setdiff(names(data), ids)]
+    
+    # Next Apps may fail on an empty list, so pass on nothing instead
+    if (length(kept) == 0) {
+      NULL
+    } else {
+      kept
+    }
+  })
+
+  return(filtered_data)
 }
