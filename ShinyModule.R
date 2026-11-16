@@ -56,9 +56,10 @@ zoom_min <- function(data) {
 
 # Tick marks with fraction labels under the zoom slider. The slider's own
 # ticks can only be evenly spaced, so these are placed by hand. Positions are
-# percentages of the slider track.
+# percentages of the slider track. Only a few ticks are used so the labels
+# don't overlap on a narrow slider.
 zoom_ticks <- function(z_min) {
-  fractions <- c(0.0001, 0.001, 0.01, 0.1, 0.5, 1)
+  fractions <- c(0.1, 0.5, 1)
   z <- 1 + log(fractions, zoom_base)
   keep <- z >= z_min
   div(
@@ -99,37 +100,46 @@ shinyModuleUserInterface <- function(id, label) {
     # appears when the plot overflows the page forces the margins inward,
     # triggering a trivial redraw.
     tags$style("html { scrollbar-gutter: stable; }"),
-    wellPanel(
-               fluidRow(
-                 column(5,
-                        uiOutput(ns("zoom_ui")),
-                        actionButton(ns("zoom_reset"), "Reset to default",
-                                     class = "btn-sm")
-               ),
-               column(5, sliderInput(
-                 ns("columns"),
-                 "Max columns:",
-                 min = 1, max = 10, value = 8
-               )),
-               column(2,
-                      checkboxInput(
-                         ns("plot_axes"),
-                         "Same axes for all animals", value = FALSE
-                       ),
-                      radioButtons(
-                        ns("view_mode"),
-                        "View:",
-                        choices = c("Per individual", "Population variogram"),
-                        selected = "Per individual"
-                      ),
-                      uiOutput(ns("selectvar"))
-               ))
-    ),
-    # Show a spinner while the plot is calculated or redrawn.
-    # min-height gives the spinner room before the first plot is drawn.
-    # (Otherwise it sits on top of the controls above.)
-    tags$style(paste0("#", ns("plot"), " { min-height: 300px; }")),
-    withSpinner(plotOutput(ns("plot"), height = "auto"), hide.ui = FALSE)
+    # On wide screens the sidebar stays in view while the plots scroll. Its
+    # height is capped at the window height so a long list of animals scrolls
+    # inside the sidebar instead of running off the bottom of the page.
+    tags$style("
+      @media (min-width: 768px) {
+        .variogram-sidebar {
+          position: sticky; top: 10px;
+          max-height: calc(100vh - 20px); overflow-y: auto;
+        }
+      }
+    "),
+    sidebarLayout(
+      tagAppendAttributes(class = "variogram-sidebar", sidebarPanel(
+        width = 3,
+        radioButtons(
+          ns("view_mode"),
+          "View:",
+          choices = c("Per individual", "Population variogram"),
+          selected = "Per individual"
+        ),
+        uiOutput(ns("zoom_ui")),
+        actionButton(ns("zoom_reset"), "Reset to default", class = "btn-sm"),
+        checkboxInput(ns("plot_axes"), "Same axes for all animals", value = FALSE),
+        hr(),
+        sliderInput(
+          ns("columns"),
+          "Max columns:",
+          min = 1, max = 6, value = 3, width = "100%"
+        ),
+        hr(),
+        uiOutput(ns("selectvar"))
+      )),
+      mainPanel(
+        width = 9,
+        # Show a spinner while the plot is calculated or redrawn.
+        # min-height gives the spinner room before the first plot is drawn.
+        tags$style(paste0("#", ns("plot"), " { min-height: 300px; }")),
+        withSpinner(plotOutput(ns("plot"), height = "auto"), hide.ui = FALSE)
+      )
+    )
   )
 }
 

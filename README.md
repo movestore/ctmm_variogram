@@ -61,6 +61,10 @@ movement behavior.
 None
 
 ### Settings
+**View**: "Per individual" shows one variogram per animal. "Population variogram"
+shows a single variogram averaged over the selected animals. Defaults to
+"Per individual".
+
 **Zoom**: The range of time lags to show on the x-axis of the variogram
 plots. Moving the slider to the left shows shorter time lags and vice versa.
 The ticks under the slider give the proportion of each animal's time lags that
@@ -69,16 +73,13 @@ By default, the first half is shown, as longer lags can be highly noisy and of
 limited utility. The **Reset to default** button returns the zoom slider to
 this value.
 
-**Max columns**: The maximum number of columns to use in the grid of plots. The
-grid uses fewer columns if fewer animals are selected, or if the window
-is too narrow for the panels to stay readable. Defaults to 8 columns.
-
 **Same axes for all animals**: If selected, all panels use the same x- and
 y-axis. Only applies when **View** is set to "Per individual".
 
-**View**: "Per individual" shows one variogram per animal. "Population variogram"
-shows a single variogram averaged over the selected animals. Defaults to
-"Per individual".
+**Max columns**: The maximum number of columns to use in the grid of plots. The
+grid uses fewer columns if fewer animals are selected, or if the window
+is too narrow for the panels to stay readable. Fewer columns give larger
+panels. Defaults to 3 columns.
 
 **Animals**: The animals to include in the variogram plot grid. By default,
 all animals are shown. Note that all animals' data are passed to the next
