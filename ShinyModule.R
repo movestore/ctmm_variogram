@@ -35,40 +35,66 @@ plot_layout <- function(n_panels, max_cols, width) {
 }
 
 # Use zoom based on ctmm's `zoom()`. Usually this only works inside RStudio,
-# so we reimplement for this app. Slider shows time lags up to 4^(z - 1) times
-# the longest time lag in the data
+# so we reimplement for this app. The slider value z shows the first
+# 4^(z - 1) of each animal's own time lags (ctmm's `fraction`). A log scale
+# leaves room on the slider to zoom in to very short time lags.
 zoom_base <- 4
-zoom_default <- 1 + log(0.5, zoom_base) # shows half the longest time lag
+zoom_default <- 1 + log(0.5, zoom_base) # shows the first half of the time lags
 
-zoom_range <- function(data) {
-  max_lag <- max(sapply(data, function(x) diff(range(x$t))))
-  min_lag <- min(sapply(data, function(x) stats::median(diff(x$t))))
-  min_fraction <- min(0.5, 10 * min_lag / max_lag)
-  list(min = 1 + log(min_fraction, zoom_base), max_lag = max_lag)
+zoom_to_fraction <- function(z) {
+  zoom_base^(z - 1)
 }
 
-zoom_cutoff <- function(z, max_lag) {
-  zoom_base^(z - 1) * max_lag
+# Lowest slider value. Lets the user zoom in to about 10 sampling intervals
+# on the animal whose track is longest relative to its sampling interval.
+zoom_min <- function(data) {
+  fractions <- sapply(data, function(x) {
+    10 * stats::median(diff(x$t)) / diff(range(x$t))
+  })
+  1 + log(min(0.5, fractions), zoom_base)
 }
 
-# Turns a time lag in seconds into readable text, e.g. "3.5 days".
-format_lag <- function(seconds) {
-  units <- c(seconds = 1, minutes = 60, hours = 3600, days = 86400,
-             months = 365.25 * 86400 / 12, years = 365.25 * 86400)
-  unit <- names(units)[max(1, which(units <= seconds))]
-  value <- signif(seconds / units[[unit]], 2)
-  if (value == 1) unit <- sub("s$", "", unit)
-  paste(value, unit)
+# Tick marks with fraction labels under the zoom slider. The slider's own
+# ticks can only be evenly spaced, so these are placed by hand. Positions are
+# percentages of the slider track.
+zoom_ticks <- function(z_min) {
+  fractions <- c(0.0001, 0.001, 0.01, 0.1, 0.5, 1)
+  z <- 1 + log(fractions, zoom_base)
+  keep <- z >= z_min
+  div(
+    class = "zoom-ticks",
+    lapply(which(keep), function(i) {
+      span(
+        class = "zoom-tick",
+        style = sprintf("left: %.2f%%;", 100 * (z[i] - z_min) / (1 - z_min)),
+        format(fractions[i], scientific = FALSE, drop0trailing = TRUE)
+      )
+    })
+  )
 }
 
 shinyModuleUserInterface <- function(id, label) {
   ns <- NS(id) ## all IDs of UI functions need to be wrapped in ns()
   tagList(
     titlePanel("Variogram"),
-    # The zoom slider's own numbers mean nothing to users, so they are
-    # hidden and the time-lag cutoff is shown as text underneath instead
-    tags$style(".zoom-slider .irs-min, .zoom-slider .irs-max,
-                .zoom-slider .irs-single { display: none; }"),
+    # The zoom slider's own numbers are on a log scale and mean nothing to
+    # users, so they are hidden and labelled ticks are drawn underneath
+    # instead. The ticks are inset by half the handle width (22px), because
+    # that is where the slider's track starts and ends.
+    tags$style("
+      .zoom-slider .irs-min, .zoom-slider .irs-max,
+      .zoom-slider .irs-single { display: none; }
+      .zoom-slider .form-group { margin-bottom: 0; }
+      .zoom-ticks { position: relative; height: 22px; margin: -6px 11px 8px; }
+      .zoom-tick {
+        position: absolute; transform: translateX(-50%);
+        padding-top: 5px; font-size: 11px; color: #777777;
+      }
+      .zoom-tick::before {
+        content: ''; position: absolute; top: 0; left: 50%;
+        height: 4px; border-left: 1px solid #999999;
+      }
+    "),
     # Always keep room for the page's scrollbar. Otherwise a scrollbar that
     # appears when the plot overflows the page forces the margins inward,
     # triggering a trivial redraw.
@@ -77,10 +103,8 @@ shinyModuleUserInterface <- function(id, label) {
                fluidRow(
                  column(5,
                         uiOutput(ns("zoom_ui")),
-                        div(style = "display: flex; align-items: center; gap: 10px;",
-                            textOutput(ns("zoom_label")),
-                            actionButton(ns("zoom_reset"), "Reset to default",
-                                         class = "btn-sm"))
+                        actionButton(ns("zoom_reset"), "Reset to default",
+                                     class = "btn-sm")
                ),
                column(5, sliderInput(
                  ns("columns"),
@@ -121,15 +145,19 @@ shinyModule <- function(input, output, session, data){ ## The parameter "data" i
     )
   })
 
-  zoom <- zoom_range(data)
+  z_min <- zoom_min(data)
 
   output$zoom_ui <- renderUI({
-    div(class = "zoom-slider", sliderInput(
-      ns("zoom"),
-      "Zoom:",
-      min = zoom$min, max = 1, value = zoom_default,
-      step = 0.01, ticks = FALSE
-    ))
+    div(
+      class = "zoom-slider",
+      sliderInput(
+        ns("zoom"),
+        "Zoom (proportion of each animal's time lags shown):",
+        min = z_min, max = 1, value = zoom_default,
+        step = 0.01, ticks = FALSE, width = "100%"
+      ),
+      zoom_ticks(z_min)
+    )
   })
 
   # The reset button is left out of saved settings. Otherwise restoring them
@@ -138,11 +166,6 @@ shinyModule <- function(input, output, session, data){ ## The parameter "data" i
   observeEvent(input$zoom_reset, {
     updateSliderInput(session, "zoom", value = zoom_default)
   }, ignoreInit = TRUE)
-
-  output$zoom_label <- renderText({
-    paste("Time lags shown: up to",
-          format_lag(zoom_cutoff(req(input$zoom), zoom$max_lag)))
-  })
 
   # Debounce the settings needed for plot rendering. This prevents laggy
   # plot redraws when settings are changed in succession. Also prevents
@@ -184,15 +207,10 @@ shinyModule <- function(input, output, session, data){ ## The parameter "data" i
 
   output$plot <- renderPlot({
     svf_sel <- req(svf1())
-    max_lag <- zoom_cutoff(req(settings()$zoom), zoom$max_lag)
-
-    # Share of a variogram's own lag range that falls within the zoom cutoff
-    zoom_fraction <- function(svf) {
-      min(1, max_lag / utils::tail(svf$lag, 1))
-    }
+    fraction <- zoom_to_fraction(req(settings()$zoom))
 
     if (settings()$view_mode == "Population variogram") {
-      plot(svf_sel, fraction = zoom_fraction(svf_sel))
+      plot(svf_sel, fraction = fraction)
     } else {
       graphics::par(mfrow = c(layout()$rows, layout()$cols),
                     mar = c(5, 5, 4, 1), ps = 18, cex = 1, cex.main = 0.9)
@@ -205,7 +223,9 @@ shinyModule <- function(input, output, session, data){ ## The parameter "data" i
 
       if (isTRUE(settings()$plot_axes)) {
         # Shared axes cover the zoomed part of every selected variogram
-        zoomed <- lapply(svf_sel, function(svf) svf[svf$lag <= max_lag, ])
+        zoomed <- lapply(svf_sel, function(svf) {
+          svf[svf$lag <= fraction * utils::tail(svf$lag, 1), ]
+        })
         extent_tele <- ctmm::extent(zoomed)
         for (i in seq_along(zoomed)) {
           plot(zoomed[[i]],
@@ -218,7 +238,7 @@ shinyModule <- function(input, output, session, data){ ## The parameter "data" i
       } else {
         for (i in seq_along(svf_sel)) {
           plot(svf_sel[[i]],
-               fraction = zoom_fraction(svf_sel[[i]]),
+               fraction = fraction,
                bty = "n")
           graphics::title(names(svf_sel[i]))
         }

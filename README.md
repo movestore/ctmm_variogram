@@ -31,7 +31,8 @@ population variogram, which averages the variograms of all the selected animals.
 
 The **Zoom** slider allows you to zoom in or out to view the autocorrelation
 structure at shorter or longer time lags. By default, the first half of the
-variogram is shown; data beyond these lags are often noisy and of limited utility.
+variogram for each animal is shown; data beyond these lags are often noisy and
+of limited utility.
 
 See the [ctmm vignette on variograms][1] for more information on interpreting
 the variograms.
@@ -62,9 +63,11 @@ None
 ### Settings
 **Zoom**: The range of time lags to show on the x-axis of the variogram
 plots. Moving the slider to the left shows shorter time lags and vice versa.
-The zoom slider is on a logarithmic scale. By default, half of the longest
-time lag in the data is shown, as longer lags can be highly noisy and of limited
-utility. The **Reset to default** button returns the zoom slider to this value.
+The ticks under the slider give the proportion of each animal's time lags that
+is shown (e.g. 0.1 shows the first 10% of every animal's variogram).
+By default, the first half is shown, as longer lags can be highly noisy and of
+limited utility. The **Reset to default** button returns the zoom slider to
+this value.
 
 **Max columns**: The maximum number of columns to use in the grid of plots. The
 grid uses fewer columns if fewer animals are selected, or if the window
