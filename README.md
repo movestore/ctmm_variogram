@@ -31,7 +31,8 @@ population variogram, which averages the variograms of all the selected animals.
 
 The **Zoom** slider allows you to zoom in or out to view the autocorrelation
 structure at shorter or longer time lags. By default, the first half of the
-variogram is shown; data beyond these lags are often noisy and of limited utility.
+variogram for each animal is shown; data beyond these lags are often noisy and
+of limited utility.
 
 See the [ctmm vignette on variograms][1] for more information on interpreting
 the variograms.
@@ -60,26 +61,35 @@ movement behavior.
 None
 
 ### Settings
-**Zoom**: The range of time lags to show on the x-axis of the variogram
-plots. Moving the slider to the left shows shorter time lags and vice versa.
-The zoom slider is on a logarithmic scale. By default, half of the longest
-time lag in the data is shown, as longer lags can be highly noisy and of limited
-utility. The **Reset to default** button returns the zoom slider to this value.
-
-**Max columns**: The maximum number of columns to use in the grid of plots. The
-grid uses fewer columns if fewer animals are selected, or if the window
-is too narrow for the panels to stay readable. Defaults to 8 columns.
-
-**Same axes for all animals**: If selected, all panels use the same x- and
-y-axis. Only applies when **View** is set to "Per individual".
-
 **View**: "Per individual" shows one variogram per animal. "Population variogram"
 shows a single variogram averaged over the selected animals. Defaults to
 "Per individual".
 
-**Animals**: The animals to include in the variogram plot grid. By default,
-all animals are shown. Note that all animals' data are passed to the next
-App, regardless of whether they are selected for visualization or not.
+**Use same axes for all animals**: If selected, all panels use the same x- and
+y-axis. Only applies when **View** is set to "Per individual".
+
+**Max columns**: The maximum number of columns to use in the grid of plots. The
+grid uses fewer columns if fewer animals are selected, or if the window
+is too narrow for the panels to stay readable. Fewer columns give larger
+panels. Defaults to 3 columns. Only applies when **View** is set to
+"Per individual".
+
+**Zoom**: The range of time lags to show on the x-axis of the variogram
+plots. Moving the slider to the left shows shorter time lags and vice versa.
+The ticks under the slider give the proportion of each variogram's time lags
+that is shown (e.g. 0.1 shows the first 10% of each animal's variogram).
+By default, the first half is shown, as longer lags can be highly noisy and of
+limited utility. The **Reset to default** button returns the zoom slider to
+this value.
+
+**Animals**: The animals to show in the grid of plots, or to average in the
+population variogram. By default, all animals are selected.
+
+**Remove unselected animals from output**: If this option is selected, only the
+animals that are checked will be included in the data passed to the next App.
+You can use this option to drop animals that do not show range-resident
+behavior. By default, all animals are included in the output, even if their
+variogram is not displayed.
 
 **Store settings**: Click to store the current settings of the App for future
 Workflow runs.
@@ -87,10 +97,13 @@ Workflow runs.
 **Restore default settings**: Click to restore the App's default settings.
 
 ### Changes in output data
-The input data remain unchanged.
+By default, the input data remain unchanged. If **Remove unselected animals
+from output** is selected, only the selected animals are passed on.
 
 ### Errors and null handling
-**Animals selection:** If no animals are selected, no plot is shown.
+**Animals selection:** If no animals are selected, no plot is shown. If
+**Remove unselected animals from output** is also selected, the App returns
+NULL.
 
 **Performance:** The variograms are calculated each time the App's window is
 opened and each time the selected animals or the **View** setting change. For

@@ -11,6 +11,9 @@
       },
       {
         "name": "shinycssloaders"
+      },
+      {
+        "name": "shinyjs"
       }
     ]
   },
