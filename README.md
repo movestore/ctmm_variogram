@@ -65,27 +65,28 @@ None
 shows a single variogram averaged over the selected animals. Defaults to
 "Per individual".
 
-**Zoom**: The range of time lags to show on the x-axis of the variogram
-plots. Moving the slider to the left shows shorter time lags and vice versa.
-The ticks under the slider give the proportion of each animal's time lags that
-is shown (e.g. 0.1 shows the first 10% of every animal's variogram).
-By default, the first half is shown, as longer lags can be highly noisy and of
-limited utility. The **Reset to default** button returns the zoom slider to
-this value.
-
-**Same axes for all animals**: If selected, all panels use the same x- and
+**Use same axes for all animals**: If selected, all panels use the same x- and
 y-axis. Only applies when **View** is set to "Per individual".
 
 **Max columns**: The maximum number of columns to use in the grid of plots. The
 grid uses fewer columns if fewer animals are selected, or if the window
 is too narrow for the panels to stay readable. Fewer columns give larger
-panels. Defaults to 3 columns.
+panels. Defaults to 3 columns. Only applies when **View** is set to
+"Per individual".
 
-**Animals**: The animals to include in the variogram plot grid. By default,
-all animals are shown.
+**Zoom**: The range of time lags to show on the x-axis of the variogram
+plots. Moving the slider to the left shows shorter time lags and vice versa.
+The ticks under the slider give the proportion of each variogram's time lags
+that is shown (e.g. 0.1 shows the first 10% of each animal's variogram).
+By default, the first half is shown, as longer lags can be highly noisy and of
+limited utility. The **Reset to default** button returns the zoom slider to
+this value.
+
+**Animals**: The animals to show in the grid of plots, or to average in the
+population variogram. By default, all animals are selected.
 
 **Remove unselected animals from output**: If this option is selected, only the
-animals that are checked will be included in the data passed to the next app.
+animals that are checked will be included in the data passed to the next App.
 You can use this option to drop animals that do not show range-resident
 behavior. By default, all animals are included in the output, even if their
 variogram is not displayed.

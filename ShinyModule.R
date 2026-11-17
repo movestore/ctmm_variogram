@@ -1,6 +1,7 @@
 library(shiny)
 library(ctmm)
 library(shinycssloaders)
+library(shinyjs)
 
 # Determine plot grid parameters for the given plot width and number of panels.
 # Caps the grid at `max_cols` columns if there are more plots than `max_cols`.
@@ -111,6 +112,9 @@ shinyModuleUserInterface <- function(id, label) {
         }
       }
     "),
+    # Grey out the label of a disabled checkbox, not just the box itself
+    tags$style(".checkbox input:disabled + span { color: #999999; }"),
+    useShinyjs(),
     sidebarLayout(
       tagAppendAttributes(class = "variogram-sidebar", sidebarPanel(
         width = 3,
@@ -120,9 +124,7 @@ shinyModuleUserInterface <- function(id, label) {
           choices = c("Per individual", "Population variogram"),
           selected = "Per individual"
         ),
-        uiOutput(ns("zoom_ui")),
-        actionButton(ns("zoom_reset"), "Reset to default", class = "btn-sm"),
-        checkboxInput(ns("plot_axes"), "Same axes for all animals", value = FALSE),
+        checkboxInput(ns("plot_axes"), "Use same axes for all animals", value = FALSE),
         hr(),
         sliderInput(
           ns("columns"),
@@ -130,7 +132,16 @@ shinyModuleUserInterface <- function(id, label) {
           min = 1, max = 6, value = 3, width = "100%"
         ),
         hr(),
+        uiOutput(ns("zoom_ui")),
+        actionButton(ns("zoom_reset"), "Reset to default", class = "btn-sm"),
+        hr(),
         uiOutput(ns("selectvar")),
+        hr(),
+        tags$label(class = "control-label", "Output:"),
+        helpText(
+          "Check this box to remove any unselected animals in the list above ",
+          "from this App's output data."
+        ),
         checkboxInput(
           ns("remove_unselected"),
           "Remove unselected animals from output",
@@ -152,6 +163,14 @@ shinyModuleUserInterface <- function(id, label) {
 shinyModule <- function(input, output, session, data){ ## The parameter "data" is reserved for the data object passed on from the previous app
   ns <- session$ns 
   
+  # The same-axes checkbox and the column slider only affect the per-animal
+  # plots, so disable them while the population view is selected
+  observeEvent(input$view_mode, {
+    per_individual <- input$view_mode == "Per individual"
+    toggleState("plot_axes", condition = per_individual)
+    toggleState("columns", condition = per_individual)
+  })
+
   output$selectvar <- renderUI({
     checkboxGroupInput(
       ns("selected_ids"),
@@ -166,9 +185,11 @@ shinyModule <- function(input, output, session, data){ ## The parameter "data" i
   output$zoom_ui <- renderUI({
     div(
       class = "zoom-slider",
+      tags$label(class = "control-label", `for` = ns("zoom"), "Zoom:"),
+      helpText("Proportion of each variogram's time lags shown"),
       sliderInput(
         ns("zoom"),
-        "Zoom (proportion of each animal's time lags shown):",
+        label = NULL,
         min = z_min, max = 1, value = zoom_default,
         step = 0.01, ticks = FALSE, width = "100%"
       ),
@@ -270,6 +291,7 @@ shinyModule <- function(input, output, session, data){ ## The parameter "data" i
     setdiff(names(data), input$selected_ids)
   })
 
+  # Lists the animals that will be removed from the output, if any
   output$removed_note <- renderUI({
     ids <- removed_ids()
     if (length(ids) == 0) return(NULL)
@@ -281,7 +303,7 @@ shinyModule <- function(input, output, session, data){ ## The parameter "data" i
       )
     )
   })
-  
+
   filtered_data <- reactive({
     ids <- removed_ids()
     
