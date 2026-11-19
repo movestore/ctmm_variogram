@@ -220,9 +220,14 @@ shinyModule <- function(input, output, session, data){ ## The parameter "data" i
     millis = 250
   )
 
+  # Variograms of all animals. This reads no inputs, so it is calculated once,
+  # when the plot first needs it. Changing the settings afterwards only
+  # redraws the plots.
+  svf_all <- reactive(lapply(data, variogram))
+
   svf1 <- reactive({
     selected_ids <- req(settings()$selected_ids)
-    svf <- lapply(data[selected_ids], variogram)
+    svf <- svf_all()[selected_ids]
     if (settings()$view_mode == "Population variogram") {
       mean(svf)
     } else {
