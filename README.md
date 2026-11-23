@@ -105,9 +105,10 @@ from output** is selected, only the selected animals are passed on.
 **Remove unselected animals from output** is also selected, the App returns
 NULL.
 
-**Performance:** The variograms are calculated each time the App's window is
-opened and each time the selected animals or the **View** setting change. For
-large data sets (long tracks with frequent locations) this can take a while.
+**Performance:** The variograms of all animals are calculated once, when the
+App's window is opened. Changing the settings afterwards only redraws the
+plots. For large data sets (long tracks with frequent locations) this first
+calculation can take a while.
 Drawing the plots also takes longer the more time lags are shown, so the plots
 redraw faster when zoomed in on shorter time lags.
 
